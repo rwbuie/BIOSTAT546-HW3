@@ -1,0 +1,211 @@
+---
+title: "Biostats 546 HW 3"
+author: "Ronald Buie"
+date: "February 10, 2019"
+output: pdf_document
+---
+
+
+Due Via Online Submission to Canvas:
+Sunday, February 24 at 12 PM (Noon)
+
+
+# 1. In this problem, you will make use of a (real) dataset of your choice in order to predict a binary response Y using predictors X1; : : : ;Xp. You should have p  5.
+
+```{r}
+library(ISLR)
+
+AutoData <- ISLR::Auto
+
+AutoData$yearBinary <- "older"
+AutoData[AutoData$year > 76,]$yearBinary <- "newer"
+AutoData$yearBinary <- as.factor(AutoData$yearBinary)
+AutoData$origin <- as.factor(AutoData$origin)
+AutoData$cylinders <- as.factor(AutoData$cylinders)
+AutoData$year <- NULL
+AutoData$name <- NULL
+
+```
+
+##(a) Describe the dataset. What is the response, and what are the predictors?
+
+```{r}
+
+head(AutoData)
+summary(AutoData)
+
+```
+The Auto data set contains information about the performance, origin and model of 392 vehicles. We have created a binary indicator variable for the year where "older" is 70 to 76, and "newer" is > 76 and will use this as our outcome. our predictors are mpg, cylinders, displacement, horsepower, weight, acceleration, and origin.
+
+## (b) Fit a logistic regression model to predict Y using X1; : : : ;Xp. What is the classication error (i.e. the fraction of incorrectly classied observations) on the training set?
+
+```{r}
+LogFitAutoData <- glm(yearBinary ~ ., data = AutoData, family="binomial")
+
+LogFitAutoDataPredictions <- predict(LogFitAutoData, type="response")
+
+LogPredictions <- rep("newer",392)
+LogPredictions[LogFitAutoDataPredictions >.5]<- "older"
+
+LogPredictionsErrorRate <- 1-mean(LogPredictions==AutoData$yearBinary)
+```
+
+The training error rate is `r round(LogPredictionsErrorRate,2)*100`%
+
+## (c) Use the validation set approach in order to estimate the test classication error. Report the error you obtain.
+
+```{r}
+set.seed(1000)
+
+trainSample <- sample(392, 196)
+
+LogFitAutoDataVS <- glm(yearBinary ~ ., data = AutoData, family="binomial", subset = trainSample)
+
+LogFitAutoDataVSPredictions <- predict(LogFitAutoDataVS, newdata = AutoData, type="response")
+
+LogPredictionsVS <- rep("newer",392)
+LogPredictionsVS[LogFitAutoDataVSPredictions >.5]<- "older"
+
+LogPredictionsVSErrorRate <- 1-mean(LogPredictionsVS==AutoData$yearBinary)[-trainSample]
+
+```
+
+The training error rate for the Validation set approach is `r round(LogPredictionsVSErrorRate,2)*100`%
+
+
+## (d) Use the leave-one-out cross-validation approach in order to estimate the test classication error. Report the error you obtain.
+
+```{r}
+library(boot)
+
+LogFitAutoDataCVError <- cv.glm(AutoData, LogFitAutoData)
+
+LogFitAutoDataCVError$delta
+
+
+```
+
+The cross validation approach yiels a MSE of `r LogFitAutoDataCVError$delta[1]` and bias corrected MSE of `r LogFitAutoDataCVError$delta[2]`
+
+## (e) Use the 5-fold cross-validation approach in order to estimate the test classication error. Report the error you obtain.
+
+```{r}
+library(boot)
+set.seed(1000)
+attach(AutoData)
+
+
+LogFitAutoDataCVK5Error <- cv.glm(AutoData, LogFitAutoData, K=5)
+
+LogFitAutoDataCVK5Error$delta[1]
+```
+The cross validation approach yiels an MSE of `r LogFitAutoDataCVError$delta[1]` and bias corrected MSE of `r LogFitAutoDataCVError$delta[2]`
+
+
+(f) Comment on your ndings in (b)-(e).
+
+
+# 2. In this problem, you will make use of a (real) dataset of your choice in order to predict a continuous response Y using predictors X1; : : : ;X6. You need to choose a dataset with at least 6 predictors. If your dataset has more than 6  predictors, then please choose 6 of them now. In other words, you should have p = 6.
+
+```{r}
+AutoData6 <- AutoData[,!(names(AutoData) %in% "origin")]
+AutoData6$cylinders <- as.numeric(as.character(AutoData6$cylinders))
+```
+
+## (a) Describe the dataset. What is the response, and what are the predictors? 1
+
+```{r}
+head(AutoData6)
+summary(AutoData6)
+```
+
+For this question we chose the same data set as above, but only included mpg, cylinders, displacement, horsepower, weight, and acceleration as predictors, and our binary year as our outcome. Cylindars, previously a dummy variable, has been converted to a continuous integer to meet the p=6 requirememt
+
+## (b) Fit a least squares linear model using every possible subset of the features. How many models did you t?
+
+```{r}
+library(leaps)
+a6Subsets <- regsubsets(yearBinary~., AutoData6)
+a6SubsetsSummary <- summary(a6Subsets)
+
+```
+
+63 models are possible.
+
+## (c) Re-create Figure 6.1 in the textbook using your data. The left-hand panel should display (training set) RSS on the y-axis, and the right-hand panel should display the R2 on the y-axis. Both panels should display the number of predictors on the x-axis.
+
+```{r}
+
+par(mfrow=c(1,2))
+plot(a6SubsetsSummary$rss ,xlab="Number of Predictors ",ylab="RSS",type="l")
+plot(a6SubsetsSummary$rsq ,xlab="Number of Predictors", ylab="R^2",type="l")
+
+```
+
+
+## (d) Report the predictors in each of the models M0;M1; : : : ;Mp.
+
+
+
+## (e) Re-create Figure 6.2 in the textbook using your data. The y-axes for the three panels should be Cp, BIC, and adjusted R2; all x-axes should display the number of predictors.
+
+```{r}
+
+```
+
+(f) Based on your results, what is the best" least squares linear model on
+this dataset? (Your answer should include not only the predictors, but
+also the coecient estimates.) Explain your answer.
+3. Consider using the Auto data set to predict mpg using polynomial functions of
+horsepower in a least squares linear regression.
+(a) Perform the validation set approach, and produce a plot like the one in the
+right-hand panel of Figure 5.2 of the textbook. Your answer won't look
+exactly the same as the results in Figure 5.2, since you'll be starting with
+a dierent random seed. Discuss your ndings. What degree polynomial
+is best, and why?
+(b) Perform leave-one-out cross-validation, and produce a plot like the one in
+the left-hand panel of Figure 5.4 of the textbook. Discuss your ndings.
+What degree polynomial is best, and why?
+(c) Perform 10-fold cross-validation, and produce a plot like the one in the
+right-hand panel of Figure 5.4 of the textbook. Discuss your ndings.
+What degree polynomial is best, and why?
+(d) Fit a least squares linear model to predict mpg using polynomials of degrees
+from 1 to 10, using all available observations. Make a plot showing Degree
+of Polynomial" on the x-axis, and Training Set Mean Squared Error" on
+the y-axis. Discuss your ndings.
+(e) Fit a least squares linear model to predict mpg using a degree-10 poly-
+nomial, using all available observations. Using the summary command in
+R, examine the output. Comment on the output, and discuss how this
+relates to your ndings in (a)(d).
+4. We will now continue with the Auto data set. Note that the R package class
+contains the knn function, which can be used to perform k-nearest neighbors
+classication.
+(a) Create a binary variable, HighMPG, that equals 1 if a car's gas mileage
+is above the median in the Auto data set, and equals 0 if the car's gas
+mileage is below the median.
+2
+(b) Make a plot with horsepower on the x-axis, displacement on the y-axis,
+and with each of the cars in the Auto data set displayed as a point. The
+cars with gas mileage above the median should be displayed in one color,
+and the cars with gas mileage below the median should be displayed in
+another color. Be sure to create a legend and to label the axes appropri-
+ately.
+(c) Use the validation set approach in order to estimate the test error of k-
+nearest neighbors classication, when using horsepower and displacement
+to predict HighMPG. Since this is a classication problem, you can dene
+test error as the fraction of test set observations that are incorrectly clas-
+sied. Make a plot of the estimated test error, as a function of k. What
+value of k gives you the smallest estimated test error? Comment on your
+results.
+(d) Now perform k-nearest neighbors regression on the full data set, for various
+values of k. Make a plot displaying the training error rate obtained, as
+a function of k, for the same values of k considered in (c). Comment on
+your results, and discuss how they relate to your ndings in (c).
+Hint: In (c), make sure to consider an appropriate range of values for k! I'd
+like to see values of k that are too small" (in terms of estimated test error)
+and also values of k that are too large".
+5. Prove the following claim: The (training) RSS of the model
+y = 0 + 
+is greater than or equal to the (training) RSS of the model
+y = 0 + 1X + :
+3
