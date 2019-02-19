@@ -125,6 +125,7 @@ For this question we chose the same data set as above, but only included mpg, cy
 
 ```{r}
 library(leaps)
+set.seed(1000)
 a6Subsets <- regsubsets(yearBinary~., AutoData6)
 a6SubsetsSummary <- summary(a6Subsets)
 
@@ -150,19 +151,32 @@ plot(a6SubsetsSummary$rsq ,xlab="Number of Predictors", ylab="R^2",type="l")
 ## (e) Re-create Figure 6.2 in the textbook using your data. The y-axes for the three panels should be Cp, BIC, and adjusted R2; all x-axes should display the number of predictors.
 
 ```{r}
+par(mfrow=c(1,3))
+plot(a6SubsetsSummary$cp ,xlab="Number of Variables ",ylab="C_p", type='l')
+points(which.min(a6SubsetsSummary$cp),min(a6SubsetsSummary$cp),col="red",cex=2,pch=20)
+plot(a6SubsetsSummary$bic ,xlab="Number of Variables ",ylab="BIC", type='l')
+points(which.min(a6SubsetsSummary$bic),min(a6SubsetsSummary$bic),col="red",cex=2,pch=20)
+plot(a6SubsetsSummary$adjr2 ,xlab="Number of Variables ",ylab="Adj R^2", type='l')
+points(which.max(a6SubsetsSummary$adjr2),max(a6SubsetsSummary$adjr2),col="red",cex=2,pch=20)
 
 ```
 
-(f) Based on your results, what is the best" least squares linear model on
-this dataset? (Your answer should include not only the predictors, but
-also the coecient estimates.) Explain your answer.
-3. Consider using the Auto data set to predict mpg using polynomial functions of
-horsepower in a least squares linear regression.
-(a) Perform the validation set approach, and produce a plot like the one in the
-right-hand panel of Figure 5.2 of the textbook. Your answer won't look
-exactly the same as the results in Figure 5.2, since you'll be starting with
-a dierent random seed. Discuss your ndings. What degree polynomial
-is best, and why?
+## (f) Based on your results, what is the best" least squares linear model on this dataset? (Your answer should include not only the predictors, but also the coecient estimates.) Explain your answer.
+
+```{r, results='asis'}
+library(stargazer)
+stargazer(round(coef(a6Subsets, 2), 6), no.space=TRUE, header=FALSE, float= FALSE, ci = TRUE, table.placement = "H")
+```
+
+Our least biased model contains 2 variables, mpg and weight. Similarly, our best performing models using $C_p$ and BIC is the same. However, performance according to adjusted $R^2$ is the 4 variable model using mpg, cylinders, displacement, and weight.
+
+# 3. Consider using the Auto data set to predict mpg using polynomial functions of horsepower in a least squares linear regression.
+
+
+
+## (a) Perform the validation set approach, and produce a plot like the one in the right-hand panel of Figure 5.2 of the textbook. Your answer won't look exactly the same as the results in Figure 5.2, since you'll be starting with a dierent random seed. Discuss your ndings. What degree polynomial is best, and why?
+
+
 (b) Perform leave-one-out cross-validation, and produce a plot like the one in
 the left-hand panel of Figure 5.4 of the textbook. Discuss your ndings.
 What degree polynomial is best, and why?
