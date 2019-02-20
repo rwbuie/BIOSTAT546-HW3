@@ -171,15 +171,39 @@ stargazer(round(coef(a6Subsets, 2), 6), no.space=TRUE, header=FALSE, float= FALS
 Our least biased model contains 2 variables, mpg and weight. Similarly, our best performing models using $C_p$ and BIC is the same. However, performance according to adjusted $R^2$ is the 4 variable model using mpg, cylinders, displacement, and weight.
 
 # 3. Consider using the Auto data set to predict mpg using polynomial functions of horsepower in a least squares linear regression.
-
+```{r}
+AutoDataPoly <- ISLR::Auto
+AutoDataPoly <- AutoDataPoly[-9]
+```
 
 
 ## (a) Perform the validation set approach, and produce a plot like the one in the right-hand panel of Figure 5.2 of the textbook. Your answer won't look exactly the same as the results in Figure 5.2, since you'll be starting with a dierent random seed. Discuss your ndings. What degree polynomial is best, and why?
 
+```{r}
+library(ggplot2)
+MSY <- data.frame(msy = numeric(), poly = numeric(), attempt = numeric())
+counter <- 0
+for(i in 1:10){
+  set.seed(i)
+  for(j in 1:10){
+    counter <- counter+1
+  train <- sample(nrow(AutoDataPoly), nrow(AutoDataPoly)/2)
+  AutoDataPolyLM <- lm(mpg~poly(horsepower,j), data = AutoDataPoly, subset = train)
+  MSY[counter,] <- c(mean((AutoDataPoly$mpg -predict(AutoDataPolyLM,AutoDataPoly))[-train]^2),j,i)
+  }
+}
+MSY$attempt <- as.factor(MSY$attempt)
+ggplot(MSY, aes(y=msy, x = poly, color = attempt)) +
+  geom_line() +
+  ggtitle("MSY of Multiple Polynomials Of Validation Approach") +
+  xlab("Degree of Polynomial")+
+  ylab("Mean Squared Error")
+aggregate(msy ~ poly, MSY, mean)[2]
+```
 
-(b) Perform leave-one-out cross-validation, and produce a plot like the one in
-the left-hand panel of Figure 5.4 of the textbook. Discuss your ndings.
-What degree polynomial is best, and why?
+##(b) Perform leave-one-out cross-validation, and produce a plot like the one in the left-hand panel of Figure 5.4 of the textbook. Discuss your ndings. What degree polynomial is best, and why?
+
+
 (c) Perform 10-fold cross-validation, and produce a plot like the one in the
 right-hand panel of Figure 5.4 of the textbook. Discuss your ndings.
 What degree polynomial is best, and why?
