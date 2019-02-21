@@ -222,32 +222,81 @@ for(i in 1:10){
 MSY$attempt <- as.factor(MSY$attempt)
 ggplot(MSY, aes(y=msy, x = poly, color = attempt)) +
   geom_line() +
-  ggtitle("MSY of Multiple Polynomials Of Validation Approach") +
+  ggtitle("MSY of Multiple Polynomials Of Validation Set Approach") +
   xlab("Degree of Polynomial")+
   ylab("Mean Squared Error")
 MeanMSY <- aggregate(msy ~ poly, MSY, mean)[2]
 which.min(MeanMSY$msy)
 ```
 
-(c) Perform 10-fold cross-validation, and produce a plot like the one in the
-right-hand panel of Figure 5.4 of the textbook. Discuss your ndings.
-What degree polynomial is best, and why?
-(d) Fit a least squares linear model to predict mpg using polynomials of degrees
-from 1 to 10, using all available observations. Make a plot showing Degree
-of Polynomial" on the x-axis, and Training Set Mean Squared Error" on
-the y-axis. Discuss your ndings.
+The mean MSY of our estimates using the third polynomial is lower than the others and so considered our best performing.
+
+## (c) Perform 10-fold cross-validation, and produce a plot like the one in the right-hand panel of Figure 5.4 of the textbook. Discuss your ndings. What degree polynomial is best, and why?
+
+```{r}
+library(ggplot2)
+library(boot)
+MSY <- data.frame(msy = numeric(), poly = numeric(), attempt = numeric())
+counter <- 0
+for(i in 1:9){
+  set.seed(i)
+
+  for(j in 1:10){
+
+    counter <- counter+1
+  #train <- sample(nrow(AutoDataPoly), nrow(AutoDataPoly)/2)
+  AutoDataPolyLM <- glm(mpg~poly(horsepower,j), data = AutoDataPoly)
+  MSY[counter,] <- c(cv.glm(AutoDataPoly, AutoDataPolyLM, K=10)$delta[1],j,i)
+  #MSY[counter,] <- c(mean((AutoDataPoly$mpg -predict(AutoDataPolyLM,AutoDataPoly))[-train]^2),j,i)
+  }
+}
+MSY$attempt <- as.factor(MSY$attempt)
+ggplot(MSY, aes(y=msy, x = poly, color = attempt)) +
+  geom_line() +
+  ggtitle("MSY of Multiple Polynomials Of K-Fold Cross-Validation Approach") +
+  xlab("Degree of Polynomial")+
+  ylab("Mean Squared Error")
+MeanMSY <- aggregate(msy ~ poly, MSY, mean)[2]
+which.min(MeanMSY$msy)
+```
+
+The mean MSE of the 7th polynomial performed the best of our 9 attempts. 
+
+##(d) Fit a least squares linear model to predict mpg using polynomials of degrees from 1 to 10, using all available observations. Make a plot showing Degree of Polynomial" on the x-axis, and Training Set Mean Squared Error" on the y-axis. Discuss your ndings.
+
+```{r}
+library(ggplot2)
+MSY <- data.frame(msy = numeric(), poly = numeric())
+for(i in 1:10){
+  AutoDataPolyLM <- lm(mpg~poly(horsepower,i) + poly(cylinders, i) + poly(displacement, i) + poly(weight, i) + poly(acceleration,i) + poly(year,i) + poly(origin, i), data = AutoDataPoly)
+  MSY[i,] <- c(mean((AutoDataPoly$mpg -predict(AutoDataPolyLM,AutoDataPoly))^2),i)
+  
+}
+MSY$attempt <- as.factor(MSY$attempt)
+ggplot(MSY, aes(y=msy, x = poly)) +
+  geom_line() +
+  ggtitle("MSY of Multiple Polynomials Of K-Fold Cross-Validation Approach") +
+  xlab("Degree of Polynomial")+
+  ylab("Training Set Mean Squared Error")
+MeanMSY <- aggregate(msy ~ poly, MSY, mean)[2]
+which.min(MeanMSY$msy)
+```
+
+
+
 (e) Fit a least squares linear model to predict mpg using a degree-10 poly-
 nomial, using all available observations. Using the summary command in
 R, examine the output. Comment on the output, and discuss how this
 relates to your ndings in (a)(d).
+
+
 4. We will now continue with the Auto data set. Note that the R package class
 contains the knn function, which can be used to perform k-nearest neighbors
 classication.
 (a) Create a binary variable, HighMPG, that equals 1 if a car's gas mileage
 is above the median in the Auto data set, and equals 0 if the car's gas
 mileage is below the median.
-2
-(b) Make a plot with horsepower on the x-axis, displacement on the y-axis,
+2 displacement on the y-axis,
 and with each of the cars in the Auto data set displayed as a point. The
 cars with gas mileage above the median should be displayed in one color,
 and the cars with gas mileage below the median should be displayed in
@@ -267,6 +316,7 @@ your results, and discuss how they relate to your ndings in (c).
 Hint: In (c), make sure to consider an appropriate range of values for k! I'd
 like to see values of k that are too small" (in terms of estimated test error)
 and also values of k that are too large".
+
 5. Prove the following claim: The (training) RSS of the model
 y = 0 + 
 is greater than or equal to the (training) RSS of the model
