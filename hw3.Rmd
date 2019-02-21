@@ -245,7 +245,7 @@ for(i in 1:9){
 
     counter <- counter+1
   #train <- sample(nrow(AutoDataPoly), nrow(AutoDataPoly)/2)
-  AutoDataPolyLM <- glm(mpg~poly(horsepower,j), data = AutoDataPoly)
+  AutoDataPolyLM <- glm(mpg~poly(horsepower,j, raw=TRUE), data = AutoDataPoly)
   MSY[counter,] <- c(cv.glm(AutoDataPoly, AutoDataPolyLM, K=10)$delta[1],j,i)
   #MSY[counter,] <- c(mean((AutoDataPoly$mpg -predict(AutoDataPolyLM,AutoDataPoly))[-train]^2),j,i)
   }
@@ -268,14 +268,14 @@ The mean MSE of the 7th polynomial performed the best of our 9 attempts.
 library(ggplot2)
 MSY <- data.frame(msy = numeric(), poly = numeric())
 for(i in 1:10){
-  AutoDataPolyLM <- lm(mpg~poly(horsepower,i) + poly(cylinders, i) + poly(displacement, i) + poly(weight, i) + poly(acceleration,i) + poly(year,i) + poly(origin, i), data = AutoDataPoly)
+  AutoDataPolyLM <- glm(mpg~poly(horsepower,i, raw=TRUE) + poly(cylinders, i, raw=TRUE) + poly(displacement, i, raw=TRUE) + poly(weight, i, raw=TRUE) + poly(acceleration,i, raw=TRUE) + poly(year,i, raw=TRUE) + poly(origin, i, raw=TRUE), data = AutoDataPoly)
   MSY[i,] <- c(mean((AutoDataPoly$mpg -predict(AutoDataPolyLM,AutoDataPoly))^2),i)
   
 }
-MSY$attempt <- as.factor(MSY$attempt)
+
 ggplot(MSY, aes(y=msy, x = poly)) +
   geom_line() +
-  ggtitle("MSY of Multiple Polynomials Of K-Fold Cross-Validation Approach") +
+  ggtitle("MSY of LR Of Full Data Set and Increasing Polynomial of all Variables") +
   xlab("Degree of Polynomial")+
   ylab("Training Set Mean Squared Error")
 MeanMSY <- aggregate(msy ~ poly, MSY, mean)[2]
@@ -284,24 +284,24 @@ which.min(MeanMSY$msy)
 
 
 
-(e) Fit a least squares linear model to predict mpg using a degree-10 poly-
-nomial, using all available observations. Using the summary command in
-R, examine the output. Comment on the output, and discuss how this
-relates to your ndings in (a)(d).
+# (e) Fit a least squares linear model to predict mpg using a degree-10 polynomial, using all available observations. Using the summary command in R, examine the output. Comment on the output, and discuss how this relates to your ndings in (a)(d).
+
+```{r}
+i<- 10
+AutoDataPolyLM <- glm(mpg~poly(horsepower,i, raw=TRUE) + poly(cylinders, i, raw=TRUE) + poly(displacement, i, raw=TRUE) + poly(weight, i, raw=TRUE) + poly(acceleration,i, raw=TRUE) + poly(year,i, raw=TRUE) + poly(origin, i, raw=TRUE), data = AutoDataPoly)
+summary(AutoDataPolyLM)
+```
+
+The variables "origin" and"cylindars" could not be used with an orthogonal polynomial of the 10th order. However, normal polynomials (used here) result in higher confidence intervals, and so reduced signifigance of coeficients. Our output shows the significance of higher orders of horsepower year, and possibly origin (but there are too few levels of this) to improve with higher order polynomials, suggesting highly curvelinier data. However, significance reduces with the other variables, suggesting the opposite.
+
+# 4. We will now continue with the Auto data set. Note that the R package class contains the knn function, which can be used to perform k-nearest neighbors classication.
+
+## (a) Create a binary variable, HighMPG, that equals 1 if a car's gas mileage is above the median in the Auto data set, and equals 0 if the car's gas mileage is below the median. 
+
+## (b) Make a plot with horsepower on the x-axis, displacement on the y-axis, and with each of the cars in the Auto data set displayed as a point. The cars with gas mileage above the median should be displayed in one color, and the cars with gas mileage below the median should be displayed in another color. Be sure to create a legend and to label the axes appropriately.
 
 
-4. We will now continue with the Auto data set. Note that the R package class
-contains the knn function, which can be used to perform k-nearest neighbors
-classication.
-(a) Create a binary variable, HighMPG, that equals 1 if a car's gas mileage
-is above the median in the Auto data set, and equals 0 if the car's gas
-mileage is below the median.
-2 displacement on the y-axis,
-and with each of the cars in the Auto data set displayed as a point. The
-cars with gas mileage above the median should be displayed in one color,
-and the cars with gas mileage below the median should be displayed in
-another color. Be sure to create a legend and to label the axes appropri-
-ately.
+
 (c) Use the validation set approach in order to estimate the test error of k-
 nearest neighbors classication, when using horsepower and displacement
 to predict HighMPG. Since this is a classication problem, you can dene
