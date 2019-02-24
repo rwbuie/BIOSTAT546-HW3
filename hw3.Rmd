@@ -102,9 +102,11 @@ LogFitAutoDataCVK5Error$delta[1]
 The cross validation approach yiels an MSE of `r LogFitAutoDataCVError$delta[1]` and bias corrected MSE of `r LogFitAutoDataCVError$delta[2]`
 
 
-(f) Comment on your ndings in (b)-(e).
+##(f) Comment on your ndings in (b)-(e).
 
-
+The error rates of our logistic regression and validation set approaches were similar, 21%. Also similar, at 14% were the error rates of ourcross validation and 5-fold cross-validation approaches. The cross validation approaches identified models with superior fit than our 
+ 
+ 
 # 2. In this problem, you will make use of a (real) dataset of your choice in order to predict a continuous response Y using predictors X1; : : : ;X6. You need to choose a dataset with at least 6 predictors. If your dataset has more than 6  predictors, then please choose 6 of them now. In other words, you should have p = 6.
 
 ```{r}
@@ -146,7 +148,10 @@ plot(a6SubsetsSummary$rsq ,xlab="Number of Predictors", ylab="R^2",type="l")
 
 ## (d) Report the predictors in each of the models M0;M1; : : : ;Mp.
 
+```{r}
 
+a6SubsetsSummary
+```
 
 ## (e) Re-create Figure 6.2 in the textbook using your data. The y-axes for the three panels should be Cp, BIC, and adjusted R2; all x-axes should display the number of predictors.
 
@@ -163,12 +168,19 @@ points(which.max(a6SubsetsSummary$adjr2),max(a6SubsetsSummary$adjr2),col="red",c
 
 ## (f) Based on your results, what is the best" least squares linear model on this dataset? (Your answer should include not only the predictors, but also the coecient estimates.) Explain your answer.
 
+Our best model based on two of our measures,  $C_p$ and BIC, contains 2 variables, mpg and weight. 
+
 ```{r, results='asis'}
 library(stargazer)
 stargazer(round(coef(a6Subsets, 2), 6), no.space=TRUE, header=FALSE, float= FALSE, ci = TRUE, table.placement = "H")
 ```
 
-Our least biased model contains 2 variables, mpg and weight. Similarly, our best performing models using $C_p$ and BIC is the same. However, performance according to adjusted $R^2$ is the 4 variable model using mpg, cylinders, displacement, and weight.
+However,  $R^2$ suggests the 4 variable model using mpg, cylinders, displacement, and weight.
+
+```{r, results='asis'}
+library(stargazer)
+stargazer(round(coef(a6Subsets, 4), 6), no.space=TRUE, header=FALSE, float= FALSE, ci = TRUE, table.placement = "H")
+```
 
 # 3. Consider using the Auto data set to predict mpg using polynomial functions of horsepower in a least squares linear regression.
 ```{r}
@@ -195,7 +207,7 @@ for(i in 1:10){
 MSY$attempt <- as.factor(MSY$attempt)
 ggplot(MSY, aes(y=msy, x = poly, color = attempt)) +
   geom_line() +
-  ggtitle("MSY of Multiple Polynomials Of Validation Approach") +
+  ggtitle("MSY of Multiple Polynomials Of Validation Set Approach") +
   xlab("Degree of Polynomial")+
   ylab("Mean Squared Error")
 MeanMSY <- aggregate(msy ~ poly, MSY, mean)[2]
@@ -222,7 +234,7 @@ for(i in 1:10){
 MSY$attempt <- as.factor(MSY$attempt)
 ggplot(MSY, aes(y=msy, x = poly, color = attempt)) +
   geom_line() +
-  ggtitle("MSY of Multiple Polynomials Of Validation Set Approach") +
+  ggtitle("MSY of Multiple Polynomials Of LOO Cross Validation Approach") +
   xlab("Degree of Polynomial")+
   ylab("Mean Squared Error")
 MeanMSY <- aggregate(msy ~ poly, MSY, mean)[2]
@@ -245,7 +257,7 @@ for(i in 1:9){
 
     counter <- counter+1
   #train <- sample(nrow(AutoDataPoly), nrow(AutoDataPoly)/2)
-  AutoDataPolyLM <- glm(mpg~poly(horsepower,j, raw=TRUE), data = AutoDataPoly)
+  AutoDataPolyLM <- glm(mpg~poly(horsepower,j), data = AutoDataPoly)
   MSY[counter,] <- c(cv.glm(AutoDataPoly, AutoDataPolyLM, K=10)$delta[1],j,i)
   #MSY[counter,] <- c(mean((AutoDataPoly$mpg -predict(AutoDataPolyLM,AutoDataPoly))[-train]^2),j,i)
   }
@@ -268,7 +280,7 @@ The mean MSE of the 7th polynomial performed the best of our 9 attempts.
 library(ggplot2)
 MSY <- data.frame(msy = numeric(), poly = numeric())
 for(i in 1:10){
-  AutoDataPolyLM <- glm(mpg~poly(horsepower,i, raw=TRUE) + poly(cylinders, i, raw=TRUE) + poly(displacement, i, raw=TRUE) + poly(weight, i, raw=TRUE) + poly(acceleration,i, raw=TRUE) + poly(year,i, raw=TRUE) + poly(origin, i, raw=TRUE), data = AutoDataPoly)
+  AutoDataPolyLM <- glm(mpg~poly(horsepower,i), data = AutoDataPoly)
   MSY[i,] <- c(mean((AutoDataPoly$mpg -predict(AutoDataPolyLM,AutoDataPoly))^2),i)
   
 }
@@ -282,43 +294,123 @@ MeanMSY <- aggregate(msy ~ poly, MSY, mean)[2]
 which.min(MeanMSY$msy)
 ```
 
+As the polynomial increases, so does the fit. So the MSE on the data decreases. Without the use of a validation approach, the result steadily improves MSE as the fit becomes tighter.
 
-
-# (e) Fit a least squares linear model to predict mpg using a degree-10 polynomial, using all available observations. Using the summary command in R, examine the output. Comment on the output, and discuss how this relates to your ndings in (a)(d).
+## (e) Fit a least squares linear model to predict mpg using a degree-10 polynomial, using all available observations. Using the summary command in R, examine the output. Comment on the output, and discuss how this relates to your ndings in (a)(d).
 
 ```{r}
 i<- 10
-AutoDataPolyLM <- glm(mpg~poly(horsepower,i, raw=TRUE) + poly(cylinders, i, raw=TRUE) + poly(displacement, i, raw=TRUE) + poly(weight, i, raw=TRUE) + poly(acceleration,i, raw=TRUE) + poly(year,i, raw=TRUE) + poly(origin, i, raw=TRUE), data = AutoDataPoly)
+AutoDataPolyLM <- glm(mpg~poly(horsepower,i), data = AutoDataPoly)
 summary(AutoDataPolyLM)
 ```
 
-The variables "origin" and"cylindars" could not be used with an orthogonal polynomial of the 10th order. However, normal polynomials (used here) result in higher confidence intervals, and so reduced signifigance of coeficients. Our output shows the significance of higher orders of horsepower year, and possibly origin (but there are too few levels of this) to improve with higher order polynomials, suggesting highly curvelinier data. However, significance reduces with the other variables, suggesting the opposite.
+
+The output from the polynomial regression shows the probability that the chance of the polynomial of a given level (<= 10) is a better fit to the data. Our output sugget that 1st through 3rd order polynomials,  5th, 6th, and possibly 7th order polynomials of horsepower are a good fit for our data. These observations align with our observations in parts a-c. In A and B, our suggested best model uses the 3rd order polynomial, an order strongly suggested in the above summary results. In C, the 7th order is suggested, which not strongly supported in the above summary data, save that a higher order polynomial, such as 5 and possibly 6, is. The results of d are not trully comparable as no validation method was used. So the highest order polynomial would always be the best fit (of the training data only). 
 
 # 4. We will now continue with the Auto data set. Note that the R package class contains the knn function, which can be used to perform k-nearest neighbors classication.
 
 ## (a) Create a binary variable, HighMPG, that equals 1 if a car's gas mileage is above the median in the Auto data set, and equals 0 if the car's gas mileage is below the median. 
 
+```{r}
+
+library(ISLR)
+
+FourthAutoData <- ISLR::Auto
+
+FourthAutoData$HighMPG <- 0
+FourthAutoData[FourthAutoData$mpg > median(FourthAutoData$mpg),]$HighMPG <- 1
+
+AutoData$yearBinary <- "older"
+AutoData[AutoData$year > 76,]$yearBinary <- "newer"
+AutoData$yearBinary <- as.factor(AutoData$yearBinary)
+AutoData$origin <- as.factor(AutoData$origin)
+AutoData$cylinders <- as.factor(AutoData$cylinders)
+AutoData$year <- NULL
+AutoData$name <- NULL
+
+```
+
 ## (b) Make a plot with horsepower on the x-axis, displacement on the y-axis, and with each of the cars in the Auto data set displayed as a point. The cars with gas mileage above the median should be displayed in one color, and the cars with gas mileage below the median should be displayed in another color. Be sure to create a legend and to label the axes appropriately.
 
+```{r}
+library(ggplot2)
 
 
-(c) Use the validation set approach in order to estimate the test error of k-
-nearest neighbors classication, when using horsepower and displacement
-to predict HighMPG. Since this is a classication problem, you can dene
-test error as the fraction of test set observations that are incorrectly clas-
-sied. Make a plot of the estimated test error, as a function of k. What
-value of k gives you the smallest estimated test error? Comment on your
-results.
-(d) Now perform k-nearest neighbors regression on the full data set, for various
-values of k. Make a plot displaying the training error rate obtained, as
-a function of k, for the same values of k considered in (c). Comment on
-your results, and discuss how they relate to your ndings in (c).
-Hint: In (c), make sure to consider an appropriate range of values for k! I'd
-like to see values of k that are too small" (in terms of estimated test error)
-and also values of k that are too large".
+ggplot(FourthAutoData, aes(x = horsepower, y = displacement, color = as.factor(HighMPG))) +
+  geom_point() +
+  labs(color = "MPG")+
+  scale_color_hue(labels = c("Low", "High")) +
+  ggtitle("Distribution of High and Low MPG Vehicles")
 
-5. Prove the following claim: The (training) RSS of the model
-y = 0 + 
-is greater than or equal to the (training) RSS of the model
-y = 0 + 1X + :
-3
+```
+
+## (c) Use the validation set approach in order to estimate the test error of knearest neighbors classication, when using horsepower and displacement to predict HighMPG. Since this is a classication problem, you can dee test error as the fraction of test set observations that are incorrectly classied. Make a plot of the estimated test error, as a function of k. Whatvalue of k gives you the smallest estimated test error? Comment on your results.
+
+```{r}
+library(class)
+set.seed(100)
+FourthAutoData$train <- sample(0:1, nrow(FourthAutoData), replace = TRUE)
+calculatedError <- data.frame(error = rep(0,10), k =  1:10)
+kcounter <- 1
+for( i in 0:9) {
+  kvalue <- kcounter + i*2
+KNNprediction <- knn(FourthAutoData[FourthAutoData$train == 1, c("horsepower", "displacement")],
+    FourthAutoData[FourthAutoData$train == 0, c("horsepower", "displacement")],
+    FourthAutoData[FourthAutoData$train == 1, "HighMPG"],
+    k = kvalue)
+calculatedError[i+1,] <- c(round(1 - mean(KNNprediction ==FourthAutoData[FourthAutoData$train == 0, "HighMPG"]),4) *100, kvalue)
+}
+
+ggplot(calculatedError, aes(x = k, y = error)) +
+  geom_line() +
+  scale_x_continuous(breaks = seq(1, 19, 2)) +
+  ggtitle("Test Error (K 1-19)")
+
+```
+
+K of 7 to 19 (the highest tested) all performed the same, with an error rate of 9.79. These wereour best performing models.
+
+Each progressive K level increases the number of observations grouped together. Displacement has a slightly larger range, and so more effect on the outcome of KNN. No improvement in predictive error was found from K=13 and up. The models with the lowest fits performed best against the test data.
+
+## (d) Now perform k-nearest neighbors regression on the full data set, for various values of k. Make a plot displaying the training error rate obtained, as a function of k, for the same values of k considered in (c). Comment on your results, and discuss how they relate to your ndings in (c). Hint: In (c), make sure to consider an appropriate range of values for k! I'd like to see values of k that are too small" (in terms of estimated test error) and also values of k that are too large".
+
+```{r}
+library(class)
+
+calculatedError <- data.frame(error = rep(0,10), k =  1:10)
+kcounter <- 1
+for( i in 0:9) {
+  kvalue <- kcounter + i*2
+KNNprediction <- knn(FourthAutoData[,c("horsepower", "displacement")],
+    FourthAutoData[,c("horsepower", "displacement")],
+    FourthAutoData[ ,"HighMPG"],
+    k = kvalue)
+calculatedError[i+1,] <- c(round(1 - mean(KNNprediction ==FourthAutoData[,"HighMPG"]),4) *100, kvalue)
+}
+
+ggplot(calculatedError, aes(x = k, y = error)) +
+  geom_line() +
+  scale_x_continuous(breaks = seq(1, 19, 2)) +
+  ggtitle("Training Only Error (K 1-19)")
+
+```
+
+Our KNN using all data to predict all data results in a higher and higher error rate as KNN becomes larger. This is because, using the same data, we are not measuring bias, but instead the increase in our variance. Larger K's results in less accurate predictions as the predictions become more generalized from the actual data. By comparison, with a training and test set, the generalization away from the training set allows for some of the difference between the training and test data to improve accuracy. Notably, the error of the worst performing models in C are similar to the middling and best performing models in B, but the best performing models in B perform slightly better (K >= 13) than the worst performing models in C. Unspririsingly, the highest fitting model in C (K=1) and several other models (up to K=9) outperform all models in B. This would be a results of overfitting to our training data and drawing predictions on that same data.
+
+# 5. Prove the following claim: The (training) RSS of the model y = 0 +  is greater than or equal to the (training) RSS of the model  = 0 + 1X + : 3
+
+The formula for RSS $y = \beta_0 + \beta_1X_1 + \epsilon$ 
+
+$$RSS=\sum_{i=1}^N (Y_i-\hat\beta_0-\hat\beta_1X_i)^2$$
+
+and for $y = \beta_0 + \epsilon$ is:
+
+$$RSS=\sum_{i=1}^N (Y_i-\hat\beta_0)^2$$
+
+The former is a subset of the later. However, the uncorrelated $\hat\beta_1$ of the former wil tend to 0 if uncorrelated, and if correlated, will tend to reduce $Y_i-\hat\beta_0-\hat\beta_1X_i$ or to move towards the less correlated, so larger RSS of $Y_i-\hat\beta_0 + 0$ or $Y_i-\hat\beta_0$
+
+
+
+
+
+
